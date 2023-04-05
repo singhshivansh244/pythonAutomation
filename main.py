@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import csv
+import sqlite3
 
 class theVergeArticles:
 
@@ -81,6 +82,33 @@ class theVergeArticles:
                             dateData.append(formatDate)
                         flag = True
     
+    def makeSqliteDb(self):
+        conn = sqlite3.connect('Data.db')
+
+        cur = conn.cursor()
+
+        cur.execute("""CREATE TABLE IF NOT EXISTS articles (
+            id INTEGER PRIMARY KEY,
+            Link TEXT,
+            Author TEXT,
+            Headline TEXT,
+            Date TEXT
+        )""")
+
+        csvLocation = str(datetime.today().strftime('%d%m%Y_verge.csv'))
+
+        with open(csvLocation, 'r') as file:
+            csvreader = csv.reader(file)
+            insertRecords = "INSERT INTO articles (Link, Author, Headline, Date) VALUES(?, ?, ?, ?)"
+            cur.executemany(insertRecords, csvreader)
+
+        # cur.execute("""DROP TABLE articles""")
+
+
+        conn.commit()
+
+        conn.close()
+
 
 def main():
     pageData = []
@@ -91,6 +119,7 @@ def main():
     obj = theVergeArticles()
     obj.getPageInfo(linkData, authorData, headlineData, dateData)
     obj.convertArrayToCsv(pageData, linkData, authorData, headlineData, dateData)
+    obj.makeSqliteDb()
 
 if __name__ == '__main__':
     main()
